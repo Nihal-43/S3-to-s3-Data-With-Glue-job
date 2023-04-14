@@ -218,3 +218,63 @@ def parms_override(stp_parms, sfn_parms):
 
 if __name__ == "__main__":
     main()
+==================================================================================================
+import boto3
+import sys
+import logging, logging.config
+from awsglue.utils import getResolvedOptions
+from botocore.exceptions import ClientError
+#from awsglue.context import GlueContext
+#from awsglue.job import Job
+
+#######Added loggers
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger()
+
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+s3_client = boto3.client('s3')
+s3 = boto3.resource("s3")
+
+cre_source_bucket=s3.Bucket("Bucket Name")
+cre_target_bucket=s3.Bucket("Bucket Name")
+cre_source_key="prefix"
+cre_target_key="prefix"
+
+logger.info("AWS Glue started for - [INFO] "+args['JOB_NAME'])
+
+
+def copyToS3(source_bucket, source_key, target_bucket, target_key):
+    s3 = boto3.resource("s3")
+    
+    for obj in source_bucket.objects.filter(Prefix=source_key):
+        print(obj)
+        copy_source = {'Bucket': source_bucket.name, 'Key': obj.key}
+        new_key = str(obj.key).replace(source_key, target_key)
+        print(new_key)
+        logger.debug (new_key)
+        
+        try:
+            s3.meta.client.copy(copy_source, target_bucket, new_key)
+            #obj.delete()
+        except ClientError as e:
+            logger.error("Copy failed from  {}/{} to {}/{}".format(source_bucket, source_key, target_bucket, new_key))
+            logger.error(str(e))
+            raise Exception("Error occured while copying files in glue job")
+        
+
+copyToS3(cre_source_bucket, cre_source_key, cre_target_bucket, cre_target_key)
+
+
+'''
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+
+copyToS3(cre_source_bucket, cre_source_key, cre_target_bucket, cre_target_key)
+
+job.commit()
+'''
