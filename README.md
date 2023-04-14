@@ -219,32 +219,53 @@ def parms_override(stp_parms, sfn_parms):
 if __name__ == "__main__":
     main()
 ==================================================================================================
+
+javascript
+Copy code
 import boto3
 import sys
 import logging, logging.config
 from awsglue.utils import getResolvedOptions
 from botocore.exceptions import ClientError
-#from awsglue.context import GlueContext
-#from awsglue.job import Job
+Here, the required modules are imported for AWS SDK for Python (Boto3) to interact with AWS services,
+ 'sys' module to access system-specific parameters and functions,
+ 'logging' module for logging and debugging purposes, and 
+'getResolvedOptions' function from 'awsglue.utils' module to retrieve job arguments.
 
-#######Added loggers
+Basic Configuration for Logging:
+
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger()
+This configures the logging module to write log messages to console. The basicConfig() method sets the logging format, level, and date format. A logger object is created to log messages.
+
+Retrieving Job Arguments:
 
 args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+The 'getResolvedOptions' function is used to retrieve job arguments passed to the AWS Glue Job, in this case, it retrieves the value of the 'JOB_NAME' argument.
+
+Creating S3 Clients and Resources:
+
 s3_client = boto3.client('s3')
 s3 = boto3.resource("s3")
+Two clients are created for S3, s3_client to interact with S3 buckets and s3 to create S3 resource instances.
+
+Setting Source and Target Buckets and Prefixes:
 
 cre_source_bucket=s3.Bucket("Bucket Name")
 cre_target_bucket=s3.Bucket("Bucket Name")
 cre_source_key="prefix"
 cre_target_key="prefix"
+The source and target bucket names are stored in variables cre_source_bucket and cre_target_bucket respectively. The prefix of the objects that need to be copied is stored in variables cre_source_key and cre_target_key.
+
+Logging Information:
 
 logger.info("AWS Glue started for - [INFO] "+args['JOB_NAME'])
+This logs an informational message indicating that the AWS Glue job has started.
 
+Defining the copyToS3 Function:
 
 def copyToS3(source_bucket, source_key, target_bucket, target_key):
     s3 = boto3.resource("s3")
@@ -263,11 +284,11 @@ def copyToS3(source_bucket, source_key, target_bucket, target_key):
             logger.error("Copy failed from  {}/{} to {}/{}".format(source_bucket, source_key, target_bucket, new_key))
             logger.error(str(e))
             raise Exception("Error occured while copying files in glue job")
-        
+A function copyToS3 is defined that takes four arguments, source_bucket, source_key, target_bucket, and target_key. This function copies the objects from the source bucket and key prefix to the target bucket with the specified key prefix. It uses the filter method of the objects object to select the objects with the specified prefix.
 
-copyToS3(cre_source_bucket, cre_source_key, cre_target_bucket, cre_target_key)
+Copying Objects:
 
-
+copyToS3(cre_source_bucket, cre_source_key
 '''
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
